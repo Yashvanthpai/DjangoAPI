@@ -108,3 +108,32 @@ constriant needed to be follow while setting new password:
         "Your password can't be a commonly used password.",
         "Your password can't be entirely numeric."
     ]
+
+--------------------------------------------------------------------------
+
+
+to setup and run this django api locally steps:
+
+once u cloned this project create Virtual environmnet using
+1. python -m venv <naame of Virtual environment>
+2. acivate virtual envirnment from same path where ur venv is created using
+  <name of ven>\Scripts\Activate.
+3. then run the command python -m pip install requiremnts.txt from path in cmd set as djangoapi.
+
+these steps are needed to performed only once.
+
+
+---------------------------------------------------------
+
+
+
+1. open command prompt type "ipconfig" copy IPv4 Address from it 
+  ex  IPv4 Address. . . . . . . . . . . : 192.168.43.117 copy  192.168.43.117.
+
+2. past that IP in ALLOWED_HOSTS list as string djangoapi/settings.py file 
+
+3. then run the command python manage.py runserver <IP Address u copied>:8000
+
+4. Use same IP to hit the API
+
+-----------------------------------
