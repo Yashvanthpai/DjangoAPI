@@ -1,0 +1,110 @@
+url : /api/
+HTTP method POST
+data formate {
+  send:	{
+   	 "username": "Username",
+    	"password": "Users password"
+	},
+   recieve:{
+       ## if user is admin:
+                    {   
+                        "id": 1,
+                        "last_login": "2020-09-29T11:11:17.982530Z",
+                        "is_superuser": true,
+                        "username": "Yash",
+                        "first_name": "",
+                        "last_name": "",
+                        "email": "Yash@gmail.com",
+                        "is_staff": true,
+                        "is_active": true,
+                        "date_joined": "2020-09-29T10:12:18.721189Z"
+
+                    }
+        ## if user is normal user:
+                    {
+                        "id": 2,
+                        "last_login": "2020-09-29T11:13:26.958350Z",
+                        "is_superuser": false,
+                        "username": "Yashvanth",
+                        "first_name": "Yashvanth",
+                        "last_name": "Pai",
+                        "email": "yashvanth3.14@gmail.com",
+                        "is_staff": false,
+                        "is_active": true,
+                        "date_joined": "2020-09-29T11:02:49.116825Z",
+                        "companyid": "2",
+                        "position": "Associate sotware developer",
+                        "imageurl": "yash.jpg"
+                    }
+}
+
+-------------------------------------------------------------------------------------------------------
+
+url : /api/admin
+HTTP method POST
+data formate {
+    sent: 
+        {
+                "username": "String field",
+                "password": "String field",
+                "first_name": "String field",
+                "last_name": "String field",
+                "email": "Valid Email field",
+                "companyid": "String field",
+                "position": "String field",
+                "imageurl": "String field"
+        }
+    recieve:
+        {
+            "user": {
+                "username": "Shashank",
+                "password": "Yash123_pai",
+                "first_name": "Shashank",
+                "last_name": "G Bhat",
+                "email": "Shashank@gmail.com"
+            },
+            "companyid": "5",
+            "position": "Google certified android developer",
+            "imageurl": "shashank.jpg"
+        }
+
+}
+
+---------------------------------------------------------------------------------------------------------
+
+url : /api/changepassword
+HTTP method POST
+data formate{
+    sent:
+        {
+            "oldPassword": "Users Old password",
+            "newPassword1": "Users new password",
+            "newPassword2": "Users new Confirm password",
+        }
+    recieve:
+        {
+            "id": 2,
+            "last_login": "2020-09-29T11:23:52.511253Z",
+            "is_superuser": false,
+            "username": "Yashvanth",
+            "first_name": "Yashvanth",
+            "last_name": "Pai",
+            "email": "yashvanth3.14@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2020-09-29T11:02:49.116825Z",
+            "companyid": "2",
+            "position": "Associate sotware developer",
+            "imageurl": "yash.jpg",
+            "message": "password changed sucessfully"
+        }
+}
+
+
+constriant needed to be follow while setting new password:
+ "password contraints": [
+        "Your password can't be too similar to your other personal information.",
+        "Your password must contain at least 8 characters.",
+        "Your password can't be a commonly used password.",
+        "Your password can't be entirely numeric."
+    ]
