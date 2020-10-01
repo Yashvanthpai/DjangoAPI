@@ -2,8 +2,8 @@ url : /api/
 HTTP method POST
 data formate {
   send:	{
-   	 "username": "Username",
-    	"password": "Users password"
+   	  "username": "Username",
+      "password": "Users password"
 	},
    recieve:{
        ## if user is admin:
@@ -18,7 +18,7 @@ data formate {
                         "is_staff": true,
                         "is_active": true,
                         "date_joined": "2020-09-29T10:12:18.721189Z"
-
+                        "token": "013769e382199354b2508ce9d33250396b5fa3c1"
                     }
         ## if user is normal user:
                     {
@@ -35,9 +35,19 @@ data formate {
                         "companyid": "2",
                         "position": "Associate sotware developer",
                         "imageurl": "yash.jpg"
+                        "token": "013769e382199354b2508ce9d33250396b5fa3c1"
                     }
 }
 
+last token field has to be used now on making any request to api so that api can authorize the user.
+
+just take the token and place it in headder of your request... don't include any thing else..
+token should be included in headder in following fashion
+
+key : Authorization 
+value : Token <key u got above>
+make sure there is space between token and actual token key
+ex : headers = {'Authorization': 'Token 9054f7aa9305e012b3c2300408c3dfdf390fcddf'}
 -------------------------------------------------------------------------------------------------------
 
 url : /api/admin

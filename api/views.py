@@ -10,14 +10,16 @@ from rest_framework.status import (
         HTTP_404_NOT_FOUND
     )
 
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated,AllowAny,IsAdminUser
+from rest_framework.authtoken.models import Token
 
 from django.contrib.auth import authenticate,login,logout,update_session_auth_hash
 
 from django.contrib.auth.models import User
 
 from django.forms.models import model_to_dict
+
 
 def get_user_serialised_data(user=None):
     user_data = dict()
@@ -38,7 +40,7 @@ def get_user_serialised_data(user=None):
 
 class UserRegistrationAPIView(APIView):
     permission_classes = [IsAdminUser]
-    authentication_classes = [SessionAuthentication]
+    authentication_classes = [TokenAuthentication]
     serializer_class =UserProfileSerialiser
 
     def get(self,request):
@@ -90,8 +92,10 @@ class UserLoginAPIView(APIView):
                             )
                 if user_obj is not None:
                     if user_obj.is_active:
-                        login(request=request,user=user_obj)
+                        token,created = Token.objects.get_or_create(user = user_obj)
+                        request.user = user_obj
                         data = get_user_serialised_data(request.user)
+                        data['token'] = token.key
                         return Response(data=data,status=HTTP_200_OK)
                     else:
                         raise Exception(error_messages['inactive'])
@@ -103,22 +107,22 @@ class UserLoginAPIView(APIView):
 
 class LoginRedirectAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [SessionAuthentication]
+    authentication_classes = [TokenAuthentication]
     def get(self,request):
         data = get_user_serialised_data(request.user)
         return Response(data)
 
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [SessionAuthentication]
-
+    authentication_classes = [TokenAuthentication]
     def get(self,request):
+        request.user.auth_token.delete()    
         logout(request)
         return Response("Logout Sucessfull")
 
 class UserPasswordChangeAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [SessionAuthentication]
+    authentication_classes = [TokenAuthentication]
     serializer_class = UserPasswordChangeSerializer
 
     def get(self,request):
