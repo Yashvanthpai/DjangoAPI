@@ -1,4 +1,4 @@
-from.serializers import UserProfileSerialiser,UserLoginSerializer,UserPasswordChangeSerializer,UserGroupMemberSerializer
+from.serializers import *
 from .models import *
 
 from rest_framework.response import Response
@@ -110,9 +110,20 @@ class LoginRedirectAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
-        data = UserGroupMember.objects.filter(group_ref__gid=1)
-        sdata = UserGroupMemberSerializer(data,many=True)
-        return Response(sdata.data)
+        data = {
+            'userlist':None,
+            'company_info':None
+        }
+        user_list = UserGroupMember.objects.filter(group_ref__gid=1)
+        user_data = UserGroupMemberSerializer(user_list,many=True)
+        
+        group_info = UserGroups.objects.get(gid=1)
+        group_data = GroupDataSerializer(group_info)
+        
+        data['userlist']= user_data.data
+        data['company_info']=group_data.data
+        
+        return Response(data)
 
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]

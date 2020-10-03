@@ -68,19 +68,34 @@ class UserPasswordChangeSerializer(serializers.Serializer):
             instance.save()
             return instance
 
-
-class UserGroupSerializer(ModelSerializer):
-
+class UserProfileDataSerializer(ModelSerializer):
     class Meta:
-        model = UserGroups
-        fields ="__all__"
+        model = UserProfile
+        fields=('companyid','position','imageurl')
+
+class UserDataSerializer(ModelSerializer):
+    user_profile_info = UserProfileDataSerializer(source='userprofile')
+    class Meta:
+        model=User
+        fields=('id','username','first_name','last_name','email','user_profile_info')
+        
+
+
+class GroupDataSerializer(ModelSerializer):
+    class Meta:
+        model=UserGroups
+        fields=('gid','groupName','description','groupImageUrl')
+
+
+
 
 class UserGroupMemberSerializer(ModelSerializer):
-
+    user_info = UserDataSerializer(source='user_ref')
     class Meta:
         model = UserGroupMember
-        fields = ('user_ref','group_ref','is_admin')
-        depth=1
+        fields = ('is_admin','user_info')
+        
+        
 
 class GroupPostSerializer(ModelSerializer):
     class Meta:
