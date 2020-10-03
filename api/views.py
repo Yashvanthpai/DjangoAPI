@@ -1,4 +1,5 @@
-from.serializers import UserProfileSerialiser,UserLoginSerializer,UserPasswordChangeSerializer
+from.serializers import UserProfileSerialiser,UserLoginSerializer,UserPasswordChangeSerializer,UserGroupMemberSerializer
+from .models import *
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -109,8 +110,9 @@ class LoginRedirectAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
-        data = get_user_serialised_data(request.user)
-        return Response(data)
+        data = UserGroupMember.objects.filter(group_ref__gid=1)
+        sdata = UserGroupMemberSerializer(data,many=True)
+        return Response(sdata.data)
 
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]

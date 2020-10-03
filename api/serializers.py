@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.serializers import ValidationError
 from django.contrib.auth.models import User
+from .models import UserGroups,UserPost,UserGroupMember
 from .models import UserProfile
 import django.contrib.auth.password_validation as validators
 
@@ -67,6 +68,24 @@ class UserPasswordChangeSerializer(serializers.Serializer):
             instance.save()
             return instance
 
+
+class UserGroupSerializer(ModelSerializer):
+
+    class Meta:
+        model = UserGroups
+        fields ="__all__"
+
+class UserGroupMemberSerializer(ModelSerializer):
+
+    class Meta:
+        model = UserGroupMember
+        fields = ('user_ref','group_ref','is_admin')
+        depth=1
+
+class GroupPostSerializer(ModelSerializer):
+    class Meta:
+        model = UserPost
+        fields="__all__"
 
 
 # def validate(self,data):
