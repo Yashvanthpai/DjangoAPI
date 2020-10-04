@@ -63,7 +63,7 @@ class UserRegistrationAPIView(APIView):
             serialise_data.save()
             return Response(serialise_data.validated_data,status=HTTP_201_CREATED)
         else:
-            return Response(serialise_data.errors) 
+            return Response(serialise_data.errors,status=HTTP_400_BAD_REQUEST) 
 
 
 class UserLoginAPIView(APIView):
@@ -103,27 +103,88 @@ class UserLoginAPIView(APIView):
                 else:
                     raise Exception(error_messages['invalid_login'])
             except Exception as e:
-                return Response(str(e))
+                return Response(str(e),status=HTTP_400_BAD_REQUEST)
 
 
 class LoginRedirectAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
+
+
     def get(self,request):
-        data = {
+
+        group_list = UserGroups.objects.filter(
+          usergroupmember__user_ref__id=request.user.id
+        )
+
+        serialized_data = GroupData_CreateSerializer(
+            group_list,many=True
+        )
+        return Response(data=serialized_data.data,status=HTTP_200_OK)
+   
+
+class GroupAPIView(APIView):
+    #return list of users in group
+    def get(self,request,groupId=None):
+        if groupId:
+            
+            data = {
             'userlist':None,
             'company_info':None
-        }
-        user_list = UserGroupMember.objects.filter(group_ref__gid=1)
-        user_data = UserGroupMemberSerializer(user_list,many=True)
+            }
+
+            user_list = UserGroupMember.objects.filter(group_ref__gid=1)
+            user_data = UserGroupMemberSerializer(user_list,many=True)
+            
+            group_info = UserGroups.objects.get(gid=groupId)
+            group_data = GroupData_CreateSerializer(group_info)
+            
+            data['userlist']= user_data.data
+            data['company_info']=group_data.data
+
+            return Response(data=data,status=HTTP_200_OK)
         
-        group_info = UserGroups.objects.get(gid=1)
-        group_data = GroupDataSerializer(group_info)
+        return Response(status=HTTP_400_BAD_REQUEST)
+
+    def post(self,request):
+        serialized_data = GroupData_CreateSerializer(
+            data=request.data
+        )
+        if serialized_data.is_valid():
+            serialized_data.save()
+
+            group_list = UserGroups.objects.filter(
+             usergroupmember__user_ref__id=request.user.id
+            )
+
+            serialized_data = GroupData_CreateSerializer(
+                group_list,many=True
+            )
+            return Response(data=serialized_data.data,status=HTTP_200_OK)
+   
+        else:
+            return Response(status=HTTP_400_BAD_REQUEST)
+    
+    def update(self,request,groupId=None):
+        group_obj = UserGroups.objects.get(gid=groupId)
+        serialized_data = GroupData_CreateSerializer(
+            instance=group_obj,data=request.data
+        )
+        if serialized_data.is_valid():
+            serialized_data.save()
+
+            group_list = UserGroups.objects.filter(
+             usergroupmember__user_ref__id=request.user.id
+            )
+
+            serialized_data = GroupData_CreateSerializer(
+                group_list,many=True
+            )
+            return Response(data=serialized_data.data,status=HTTP_200_OK)
+   
+        else:
+            return Response(status=HTTP_400_BAD_REQUEST)
         
-        data['userlist']= user_data.data
-        data['company_info']=group_data.data
-        
-        return Response(data)
 
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -170,3 +231,22 @@ class UserPasswordChangeAPIView(APIView):
 class PageNotFoundAPIViews(APIView):
     def get(self,request):
         return Response(data="Page Not Found",status=HTTP_404_NOT_FOUND)
+
+
+
+
+#  def get(self,request):
+#         data = {
+#             'userlist':None,
+#             'company_info':None
+#         }
+#         user_list = UserGroupMember.objects.filter(group_ref__gid=1)
+#         user_data = UserGroupMemberSerializer(user_list,many=True)
+        
+#         group_info = UserGroups.objects.get(gid=1)
+#         group_data = GroupDataSerializer(group_info)
+        
+#         data['userlist']= user_data.data
+#         data['company_info']=group_data.data
+        
+#         return Response(data)

@@ -68,10 +68,13 @@ class UserPasswordChangeSerializer(serializers.Serializer):
             instance.save()
             return instance
 
+
+
 class UserProfileDataSerializer(ModelSerializer):
     class Meta:
         model = UserProfile
         fields=('companyid','position','imageurl')
+
 
 class UserDataSerializer(ModelSerializer):
     user_profile_info = UserProfileDataSerializer(source='userprofile')
@@ -81,12 +84,55 @@ class UserDataSerializer(ModelSerializer):
         
 
 
-class GroupDataSerializer(ModelSerializer):
+class GroupData_CreateSerializer(ModelSerializer):
+    group_owner = UserDataSerializer(source='owner')
     class Meta:
         model=UserGroups
-        fields=('gid','groupName','description','groupImageUrl')
+        fields=('gid','groupName','description','groupImageUrl','group_owner')
+    
+    def create(self, validated_data):
+        user_id = validated_data.pop('owner')
+        user = None
+        request = self.context.get('request')
+        if request and hasattr(request,'user'):
+            user = request.get('user')
+        else:
+            user = User.objects.get(id=user_id)
+        
+        group_obj = UserGroups.objects.create(owner=user,**validated_data)
+
+        first_group_member_obj = UserGroupMember.objects.create(
+            user_ref = user,
+            group_ref=group_obj,
+            is_admin=True
+        )
+        return group_obj
 
 
+class UserGroupMemberCreateSerializer(ModelSerializer):
+    class Meta:
+        model = UserGroupMember
+        fields = "__all__"
+        
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_ref')
+        group_id = validated_data.pop('group_ref')
+        user = None
+        request = self.context.get('request')
+        if request and hasattr(request,'user'):
+            user = request.get('user')
+        else:
+            user = User.objects.get(id=user_id)
+        
+        group = UserGroups.objects.get(gid=group_id)
+
+        group_member_obj = UserGroupMember.objects.create(
+            user_ref = user,
+            group_ref=group,
+            **validated_data
+        )
+
+        return group_member_obj
 
 
 class UserGroupMemberSerializer(ModelSerializer):
@@ -95,20 +141,44 @@ class UserGroupMemberSerializer(ModelSerializer):
         model = UserGroupMember
         fields = ('is_admin','user_info')
         
-        
+    
 
 class GroupPostSerializer(ModelSerializer):
     class Meta:
         model = UserPost
         fields="__all__"
 
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_ref')
+        group_id = validated_data.pop('group_ref')
+        user = None
+        request = self.context.get('request')
+        if request and hasattr(request,'user'):
+            user = request.get('user')
+        else:
+            user = User.objects.get(id=user_id)
+        
+        group = UserGroups.objects.get(gid=group_id)
+
+        user_post_obj = UserPost.objects.create(
+            user_ref = user,
+            group_ref=group,
+            **validated_data
+        )
+
+        return user_post_obj
 
 # def validate(self,data):
 #         if data['password'] != data['password1']:
 #             raise ValidationError("password not matching")
 #         errors = dict() 
 #         data.pop('password1')
-#         user = User(**data)
+#         user = None
+#         request = self.context.get("request")
+#         if request and hasattr(request, "user"):
+#                 user = request.user
+#         else:
+#             user = User(**data)
 #         try:
 #              validators.validate_password(password=data['password'],user=user)
 
