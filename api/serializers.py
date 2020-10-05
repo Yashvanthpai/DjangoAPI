@@ -81,14 +81,11 @@ class UserDataSerializer(ModelSerializer):
     class Meta:
         model=User
         fields=('id','username','first_name','last_name','email','user_profile_info')
-        
 
-
-class GroupData_CreateSerializer(ModelSerializer):
-    group_owner = UserDataSerializer(source='owner')
+class GroupCreateSerializer(ModelSerializer):
     class Meta:
         model=UserGroups
-        fields=('gid','groupName','description','groupImageUrl','group_owner')
+        fields=('groupName','description','groupImageUrl','owner')
     
     def create(self, validated_data):
         user_id = validated_data.pop('owner')
@@ -106,8 +103,16 @@ class GroupData_CreateSerializer(ModelSerializer):
             group_ref=group_obj,
             is_admin=True
         )
-        return group_obj
+        return group_obj        
 
+
+class GroupDataSerializer(ModelSerializer):
+    group_owner = UserDataSerializer(source='owner')
+    class Meta:
+        model=UserGroups
+        fields=('gid','groupName','description','groupImageUrl','group_owner')
+    
+   
 
 class UserGroupMemberCreateSerializer(ModelSerializer):
     class Meta:
@@ -143,10 +148,10 @@ class UserGroupMemberSerializer(ModelSerializer):
         
     
 
-class GroupPostSerializer(ModelSerializer):
+class GroupPostCreateSerializer(ModelSerializer):
     class Meta:
         model = UserPost
-        fields="__all__"
+        fields=('title','description','group_ref','user_ref')
 
     def create(self, validated_data):
         user_id = validated_data.pop('user_ref')
@@ -168,6 +173,12 @@ class GroupPostSerializer(ModelSerializer):
 
         return user_post_obj
 
+class GroupPostDataSerializer(ModelSerializer):
+    class Meta:
+        model = UserPost
+        fields=('pid','title','description')
+
+   
 # def validate(self,data):
 #         if data['password'] != data['password1']:
 #             raise ValidationError("password not matching")
