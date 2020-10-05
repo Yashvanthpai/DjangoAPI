@@ -10,16 +10,14 @@ from rest_framework.status import (
         HTTP_400_BAD_REQUEST,
         HTTP_404_NOT_FOUND
     )
-
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated,AllowAny,IsAdminUser
 from rest_framework.authtoken.models import Token
 
 from django.contrib.auth import authenticate,login,logout,update_session_auth_hash
-
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.shortcuts import reverse,redirect
-
 from django.forms.models import model_to_dict
 
 
@@ -168,11 +166,22 @@ class GroupAPIView(APIView):
           usergroupmember__user_ref__id=request.user.id
         )
 
+        search = request.query_params.get('search',None)
+
+        if search:
+            group_list = group_list.filter(
+                Q(groupName__icontains=search)|
+                Q(description__icontains=search)|
+                Q(owner__username__icontains=search)|
+                Q(owner__first_name__icontains=search)|
+                Q(owner__userprofile__companyid__icontains=search)
+            )
+
         serialized_data = GroupDataSerializer(
             group_list,many=True
         )
 
-        data['grouplist']:serialized_data.data
+        data['grouplist']=serialized_data.data
         data['loggeduser_info']=get_user_serialised_data(request.user)
         
         return Response(data=data,status=HTTP_200_OK)
@@ -185,7 +194,7 @@ class GroupAPIView(APIView):
             serialized_data.save()
 
             group_list = UserGroups.objects.filter(
-             usergroupmember__user_ref__id=request.user.id
+             groupName=serialized_data.validated_data.get('groupName')
             )
 
             serialized_data = GroupDataSerializer(
@@ -196,9 +205,9 @@ class GroupAPIView(APIView):
         else:
             return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
 
-#return list of users in group in getmethod
-# add new user to group in postmethod
-# update group info in updatemethod
+# return list of users in group , getmethod
+# add new user to group , postmethod
+# update group info , updatemethod
 class GroupDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
@@ -211,7 +220,22 @@ class GroupDetailAPIView(APIView):
             'group_info':None
             }
 
-            user_list = UserGroupMember.objects.filter(group_ref__gid=groupId)
+            user_list = UserGroupMember.objects.filter(
+                group_ref__gid=groupId
+            )
+            
+            search = request.query_params.get('search',None)
+
+            if search:
+                if search.lower() in 'admin is_admin isadmin':
+                    user_list = user_list.filter(is_admin=True)
+                else:
+                    user_list = user_list.filter(
+                        Q(user_ref__username__icontains=search)|
+                        Q(user_ref__first_name__icontains=search)|
+                        Q(user_ref__userprofile__companyid__icontains=search)
+                    )
+            
             user_data = UserGroupMemberSerializer(user_list,many=True)
             
             group_info = UserGroups.objects.get(gid=groupId)
@@ -224,37 +248,31 @@ class GroupDetailAPIView(APIView):
         
         return Response(status=HTTP_400_BAD_REQUEST)
 
-    def post(self,request,groupId=None):
-        if groupId:
-            if not hasattr(request.data,'group_ref'):
-                request.data['group_ref']=groupId
-
-                serialized_data = UserGroupMemberCreateSerializer(
-                    data=request.data
-                )
-                if serialized_data.is_valid():
-                    serialized_data.save()
-                    return Response(data=serialized_data.validated_data,status=HTTP_200_OK)
-                
-                else:
-                    return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
-        else:
-            return Response(status=HTTP_400_BAD_REQUEST)
-   
-    def update(self,request,groupId=None):
-        if groupId:
-            group_obj = UserGroups.objects.get(gid=groupId)
-            serialized_data = GroupCreateSerializer(
-                instance=group_obj,data=request.data,partial=True
-            )
-            if serialized_data.is_valid():
-                serialized_data.save()
-                return Response(data=serialized_data.validated_data,status=HTTP_200_OK)
+    def post(self,request):
+        serialized_data = UserGroupMemberCreateSerializer(
+                data=request.data
+        )
+        if serialized_data.is_valid():
+                data = serialized_data.save()
+                data = UserGroupMemberSerializer(data)
+                return Response(data=data.data,status=HTTP_200_OK)
             
-            else:
-                return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
         else:
-            return Response(status=HTTP_400_BAD_REQUEST)
+                return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
+    
+    def put(self,request):
+        group_obj = UserGroups.objects.get(gid=request.data.get('gid'))
+        serialized_data = GroupCreateSerializer(
+            instance=group_obj,data=request.data,partial=True
+        )
+        if serialized_data.is_valid():
+            data = serialized_data.save()
+            data = GroupDataSerializer(data)
+            return Response(data=data.data,status=HTTP_200_OK)
+        
+        else:
+            return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
+       
 
 # get list of post posted by user in a group,getmethod
 # create new post,postmethod
@@ -273,6 +291,16 @@ class GroupUserPostsAPIView(APIView):
                 group_ref__gid= groupId,
                 user_ref__id = userId
             )
+            
+            search = request.query_params.get('search',None)
+
+            if search:
+                    user_posts = user_posts.filter(
+                        Q(title__icontains=search)|
+                        Q(description__icontains=search)
+                    )
+
+
             serialized_data = GroupPostDataSerializer(
                 user_posts,many=True
             )
@@ -287,11 +315,11 @@ class GroupUserPostsAPIView(APIView):
             data = request.data
         )
         if serialized_data.is_valid():
-            user_id = serialized_data.validated_data.get('user_ref')
-            group_id = serialized_data.validated_data.get('group_ref')
-            
-            serialized_data.save()
-            return Response(data=serialized_data.validated_data,status=HTTP_200_OK)
+            data = serialized_data.save()
+            data = GroupPostDataSerializer(
+                data
+            )
+            return Response(data=data.data,status=HTTP_200_OK)
         else:
             return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
 
@@ -314,7 +342,7 @@ class UserPostDetailAPIView(APIView):
         else:
             return Response(status=HTTP_400_BAD_REQUEST)
 
-    def update(self,request,postId=None):
+    def put(self,request,postId=None):
         if postId:
             post_obj = UserPost.objects.get(pid=postId)
             serialized_data = GroupPostCreateSerializer(
@@ -322,9 +350,12 @@ class UserPostDetailAPIView(APIView):
             )
             if serialized_data.is_valid():
                
-                serialized_data.save()
-
-                return Response(data=serialized_data.validated_data,status=HTTP_200_OK)
+                data = serialized_data.save()
+                data = GroupPostDataSerializer(
+                    data
+                )
+                return Response(data=data.data,status=HTTP_200_OK)
+            
             else:
                 return Response(data=serialized_data.errors,status=HTTP_400_BAD_REQUEST)
 
@@ -333,6 +364,7 @@ class UserPostDetailAPIView(APIView):
 
 
 
+# handling 404 errors
 
 class PageNotFoundAPIViews(APIView):
     def get(self,request):

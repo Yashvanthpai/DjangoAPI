@@ -20,7 +20,7 @@ class UserGroups(models.Model):
     groupName = models.CharField(max_length=50,blank=False,null=False)
     description = models.CharField(max_length=100,blank=True,null=True)
     groupImageUrl = models.CharField(max_length=50,blank=True,null=True)
-    owner = models.OneToOneField(User,on_delete=models.SET_NULL,null=True)
+    owner = models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
     class Meta:
         ordering=['gid']
 

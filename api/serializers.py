@@ -32,41 +32,41 @@ class UserProfileSerialiser(ModelSerializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
-        username = serializers.CharField(max_length=300, required=True)
-        password = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
+    username = serializers.CharField(max_length=300, required=True)
+    password = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
 
 
 class UserPasswordChangeSerializer(serializers.Serializer):
-        oldPassword = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
-        newPassword1 = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
-        newPassword2 = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
+    oldPassword = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
+    newPassword1 = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
+    newPassword2 = serializers.CharField(required=True, write_only=True,style={'input_type':"password"})
 
-        class Meta:
-            fields=('oldPassword','newPassword1','newPassword2')
+    class Meta:
+        fields=('oldPassword','newPassword1','newPassword2')
 
-        def validate(self, data):
-            if data['newPassword1'] != data['newPassword2']:
-                 raise  serializers.ValidationError("New passwords are not matching")
-            return super().validate(data)
+    def validate(self, data):
+        if data['newPassword1'] != data['newPassword2']:
+                raise  serializers.ValidationError("New passwords are not matching")
+        return super().validate(data)
+    
+    def update(self, instance, validated_data):
+            
+        if not instance.check_password(validated_data.get('oldPassword')):
+            raise  serializers.ValidationError("Old password is incorect try again")
         
-        def update(self, instance, validated_data):
-             
-            if not instance.check_password(validated_data.get('oldPassword')):
-                raise  serializers.ValidationError("Old password is incorect try again")
-            
-            errors = dict()
-            try:
-                validators.validate_password(password=validated_data['newPassword1'],user=instance)
+        errors = dict()
+        try:
+            validators.validate_password(password=validated_data['newPassword1'],user=instance)
 
-            except Exception as e:
-                errors['password'] = list(e.messages)
+        except Exception as e:
+            errors['password'] = list(e.messages)
 
-            if errors:
-                raise serializers.ValidationError(errors)
-            
-            instance.set_password(validated_data['newPassword1'])
-            instance.save()
-            return instance
+        if errors:
+            raise serializers.ValidationError(errors)
+        
+        instance.set_password(validated_data['newPassword1'])
+        instance.save()
+        return instance
 
 
 
@@ -86,20 +86,14 @@ class GroupCreateSerializer(ModelSerializer):
     class Meta:
         model=UserGroups
         fields=('groupName','description','groupImageUrl','owner')
-    
+
     def create(self, validated_data):
-        user_id = validated_data.pop('owner')
-        user = None
-        request = self.context.get('request')
-        if request and hasattr(request,'user'):
-            user = request.get('user')
-        else:
-            user = User.objects.get(id=user_id)
-        
-        group_obj = UserGroups.objects.create(owner=user,**validated_data)
+
+        group_obj = UserGroups.objects.create(
+            **validated_data)
 
         first_group_member_obj = UserGroupMember.objects.create(
-            user_ref = user,
+            user_ref = validated_data.get('owner'),
             group_ref=group_obj,
             is_admin=True
         )
@@ -111,8 +105,8 @@ class GroupDataSerializer(ModelSerializer):
     class Meta:
         model=UserGroups
         fields=('gid','groupName','description','groupImageUrl','group_owner')
+        
     
-   
 
 class UserGroupMemberCreateSerializer(ModelSerializer):
     class Meta:
@@ -120,20 +114,7 @@ class UserGroupMemberCreateSerializer(ModelSerializer):
         fields = "__all__"
         
     def create(self, validated_data):
-        user_id = validated_data.pop('user_ref')
-        group_id = validated_data.pop('group_ref')
-        user = None
-        request = self.context.get('request')
-        if request and hasattr(request,'user'):
-            user = request.get('user')
-        else:
-            user = User.objects.get(id=user_id)
-        
-        group = UserGroups.objects.get(gid=group_id)
-
         group_member_obj = UserGroupMember.objects.create(
-            user_ref = user,
-            group_ref=group,
             **validated_data
         )
 
@@ -154,20 +135,7 @@ class GroupPostCreateSerializer(ModelSerializer):
         fields=('title','description','group_ref','user_ref')
 
     def create(self, validated_data):
-        user_id = validated_data.pop('user_ref')
-        group_id = validated_data.pop('group_ref')
-        user = None
-        request = self.context.get('request')
-        if request and hasattr(request,'user'):
-            user = request.get('user')
-        else:
-            user = User.objects.get(id=user_id)
-        
-        group = UserGroups.objects.get(gid=group_id)
-
         user_post_obj = UserPost.objects.create(
-            user_ref = user,
-            group_ref=group,
             **validated_data
         )
 

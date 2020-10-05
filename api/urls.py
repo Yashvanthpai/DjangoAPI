@@ -10,8 +10,8 @@ urlpatterns =[
     url(r'^group/create$',GroupAPIView.as_view(),),
 
     url(r'^group/(?P<groupId>[0-9]+)$',GroupDetailAPIView.as_view(),name='group_info'),    
-    url(r'^group/(?P<groupId>[0-9]+)$/adduser',GroupDetailAPIView.as_view(),),    
-    url(r'^group/(?P<groupId>[0-9]+)/update$',GroupDetailAPIView.as_view(),),
+    url(r'^group/adduser$',GroupDetailAPIView.as_view(),),    
+    url(r'^group/update$',GroupDetailAPIView.as_view(),),
 
     #to get list of posts from perticular user in the group
     url(r'^group/(?P<groupId>[0-9]+)/(?P<userId>[0-9]+)/groupuserposts$',GroupUserPostsAPIView.as_view(),name='group_posts'),
